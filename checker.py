@@ -2,51 +2,67 @@ import time
 from playsound import playsound
 from multiprocessing import Process
 
-# Checks the line number of the latest line in the file that starts with "---"
+# Checks the line number of the latest line in the file that starts with a divider
 # Returns none if there is none
-def note_read(file):
+def note_read(file, divider):
     n = None
-    print("program start")
     f = open(file, "r")
     for x, line in enumerate(f):
-        if (line[:3] == "---"):
+        if (line[:3] == divider):
             n = x
     return n
 
-def call_alarm():
+# play alarm sound
+def call_alarm(sound):
     while (True):
-        playsound("alarm.mp3")
+        playsound(sound)
     
 
 def main():
+    # ESTABLISH PARAMETERS
+    #---------------------------------------------------------------------------------------------------------------------
+
     # establish lambda in terms of minutes
     λ = 3/60
 
-    # establish file name
-    file = "note.txt"
+    # establish divider
+    divider = "---"
 
-    # establish starting case of the file
-    n = note_read(file)
+    # establish file name
+    file_name = "note.txt"
+
+    # establish alarm
+    alarm_sound = "alarm.mp3"
+
+    #---------------------------------------------------------------------------------------------------------------------
+    
+    # check if file is in valid format and establish starting n value
+    n = note_read(file_name, divider)
     if (n == None):
         raise Exception("This file format is invalid.")
-    print(f"latest line is at line {n}.")
+    success_count = 0
+    round = 1
+    print("Welcome - you have started a new session.")
 
     # forever while the script is running, check every λ minutes if at least one section has been added
     while (True):
-        temp = note_read(file)
-        # if section is not added, trigger alarm sound; else record new line of latest divider
-        # alarm is a seperate process; such a process is terminated on input
+        # wait λ minutes
+        print(f"This is round {round}")
+        time.sleep(λ * 60)
+        temp = note_read(file_name, divider)
         if (temp == n):
-            alarm = Process(target = call_alarm)
+            # alarm is a seperate process; this is to make it stop on input
+            # put ' inside argument parameter or it will cause tuple detection errors in compiler
+            alarm = Process(target = call_alarm, args=(alarm_sound,))
             alarm.start()
+            print("Uh-oh! You failed to keep up to your standards. Alarm will sound.")
             input("Type anything to terminate alarm: ")
             alarm.terminate()
         else:
             n = temp
-            print("Good job!")
-            print(f"latest line is at line {n} - this is a new line.")
-        # wait λ minutes
-        time.sleep(λ * 60)
+            success_count += 1
+            print(f"Good job! Keep it up. You've succeeded {success_count} times this session.")
+        round += 1
 
 if __name__ == "__main__":
     main()
